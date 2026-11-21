@@ -76,7 +76,14 @@ export function AdminDashboardPage({ lang }: AdminDashboardPageProps) {
   const [leadFilter, setLeadFilter] = useState<'All' | DashboardLead['status']>('All');
   const [leadSearch, setLeadSearch] = useState('');
 
+  const isStaticHost =
+    typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
+
   useEffect(() => {
+    if (isStaticHost) {
+      setAuthMode('login');
+      return;
+    }
     let active = true;
     fetch('/api/admin/auth-status')
       .then((r) => r.json())
@@ -90,7 +97,7 @@ export function AdminDashboardPage({ lang }: AdminDashboardPageProps) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isStaticHost]);
 
   const loadDashboard = useCallback(async (authToken: string) => {
     setLoadingData(true);
@@ -248,7 +255,19 @@ export function AdminDashboardPage({ lang }: AdminDashboardPageProps) {
             </p>
           </div>
 
-          {authMode === 'loading' ? (
+          {isStaticHost ? (
+            <div className="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/40 p-4 space-y-2 text-xs sm:text-sm text-stone-700 dark:text-stone-300">
+              <p className="font-semibold text-stone-900 dark:text-stone-100">
+                Backend Server Required for Live Analytics
+              </p>
+              <p>
+                GitHub Pages hosts static frontend files only and cannot run the Node.js backend
+                server (<span className="font-mono">server.ts</span>). Deploy the repository to a
+                Node.js host (such as Cloud Run, Render, or Railway) to enable live visitor
+                tracking, lead storage, and automatic email/Telegram alerts.
+              </p>
+            </div>
+          ) : authMode === 'loading' ? (
             <p className="text-sm text-stone-500">Checking dashboard status...</p>
           ) : authMode === 'setup' ? (
             <form onSubmit={handleSetup} className="space-y-4">

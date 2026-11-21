@@ -1,10 +1,17 @@
+import heroThali from '../assets/images/hero_balanced_thali_1795251653262.jpg';
+import heroNutrition from '../assets/images/hero_nutrition_coaching_1795251642002.jpg';
+import coachNikhil from '../assets/images/coach_nikhil_portrait_1795251642119.jpg';
+import coachAnupamand from '../assets/images/coach_anupamand_portrait_1795251642500.jpg';
+import blogProtein from '../assets/images/blog_protein_muscle_1795251642118.jpg';
+import blogHydration from '../assets/images/blog_hydration_habits_1795251643365.jpg';
+
 export const SITE_IMAGES = {
-  heroThali: '/src/assets/images/hero_balanced_thali_1795251653262.jpg',
-  heroNutrition: '/src/assets/images/hero_nutrition_coaching_1795251642002.jpg',
-  coachNikhil: '/src/assets/images/coach_nikhil_portrait_1795251642119.jpg',
-  coachAnupamand: '/src/assets/images/coach_anupamand_portrait_1795251642500.jpg',
-  blogProtein: '/src/assets/images/blog_protein_muscle_1795251642118.jpg',
-  blogHydration: '/src/assets/images/blog_hydration_habits_1795251643365.jpg',
+  heroThali,
+  heroNutrition,
+  coachNikhil,
+  coachAnupamand,
+  blogProtein,
+  blogHydration,
 } as const;
 
 export const SITE_LINKS = {

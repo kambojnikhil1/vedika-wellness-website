@@ -14,7 +14,12 @@ function getOrCreateVisitorId(): string {
   }
 }
 
+function isStaticGitHubPages(): boolean {
+  return typeof window !== 'undefined' && window.location.hostname.endsWith('github.io');
+}
+
 export async function trackPageView(page: string, title: string, lang: Lang, theme: Theme): Promise<void> {
+  if (isStaticGitHubPages()) return;
   try {
     await fetch('/api/analytics/pageview', {
       method: 'POST',
@@ -52,18 +57,56 @@ export interface LeadSubmissionResult {
   notificationLog?: string[];
 }
 
+function hasValidContact(phone?: string, email?: string): boolean {
+  const digits = (phone || '').replace(/\D/g, '');
+  const phoneOk = digits.length >= 7 && digits.length <= 15;
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((email || '').trim());
+  return phoneOk || emailOk;
+}
+
 export async function submitLead(payload: LeadSubmissionPayload): Promise<LeadSubmissionResult> {
-  const res = await fetch('/api/leads', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  const data = (await res.json()) as LeadSubmissionResult;
-  if (!res.ok) {
+  if (!hasValidContact(payload.phone, payload.email)) {
     return {
       accepted: false,
-      error: data.error || 'Could not submit your details. Please check your phone number or email.',
+      error: 'Please enter a valid phone number or email address so our coach can reach you.',
     };
   }
-  return data;
+
+  if (isStaticGitHubPages()) {
+    return {
+      accepted: true,
+      notified: false,
+      id: `static-${Date.now()}`,
+      notificationLog: ['Static preview mode — use the WhatsApp button below to message coach immediately.'],
+    };
+  }
+
+  try {
+    const res = await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return {
+        accepted: true,
+        notified: false,
+        id: `static-${Date.now()}`,
+      };
+    }
+    const data = (await res.json()) as LeadSubmissionResult;
+    if (!res.ok) {
+      return {
+        accepted: false,
+        error: data.error || 'Could not submit your details. Please check your phone number or email.',
+      };
+    }
+    return data;
+  } catch {
+    return {
+      accepted: false,
+      error: 'Could not reach the server. Please message us directly on WhatsApp (+91 81939 89452).',
+    };
+  }
 }

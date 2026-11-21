@@ -40,8 +40,24 @@ const PAGE_TITLES: Record<PageId, string> = {
   admin: 'Visitor & Lead Dashboard – Vedika Health and Wellness',
 };
 
-function resolvePageFromPath(pathname: string): PageId {
-  const clean = pathname.replace(/\/+$/, '') || '/';
+function isStaticSubpathHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (window.location.hostname.endsWith('github.io')) return true;
+  // Also handle any non-root base path if the page isn't at a known app route
+  const knownPaths = new Set(Object.values(PAGE_PATHS));
+  const clean = window.location.pathname.replace(/\/+$/, '') || '/';
+  return clean !== '/' && !knownPaths.has(clean);
+}
+
+function resolveCurrentPage(): PageId {
+  const hash = window.location.hash.replace(/^#/, '').replace(/\/+$/, '');
+  if (hash) {
+    const hashMatch = (Object.entries(PAGE_PATHS) as [PageId, string][]).find(
+      ([, path]) => path === hash || path === `/${hash}`
+    );
+    if (hashMatch) return hashMatch[0];
+  }
+  const clean = window.location.pathname.replace(/\/+$/, '') || '/';
   const match = (Object.entries(PAGE_PATHS) as [PageId, string][]).find(
     ([, path]) => path === clean
   );
@@ -49,9 +65,8 @@ function resolvePageFromPath(pathname: string): PageId {
 }
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<PageId>(() =>
-    resolvePageFromPath(window.location.pathname)
-  );
+  const [useHashRouting] = useState<boolean>(() => isStaticSubpathHost());
+  const [currentPage, setCurrentPage] = useState<PageId>(() => resolveCurrentPage());
   const [subParam, setSubParam] = useState<string | undefined>(undefined);
   const [lang, setLang] = useState<Lang>('en');
   const [theme, setTheme] = useState<Theme>('light');
@@ -79,25 +94,37 @@ export default function App() {
     }
   }, [currentPage, lang, theme]);
 
-  // Handle browser back/forward buttons
+  // Handle browser back/forward buttons & hash changes
   useEffect(() => {
-    const onPopState = () => {
-      setCurrentPage(resolvePageFromPath(window.location.pathname));
+    const onRouteChange = () => {
+      setCurrentPage(resolveCurrentPage());
       setSubParam(undefined);
     };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    window.addEventListener('popstate', onRouteChange);
+    window.addEventListener('hashchange', onRouteChange);
+    return () => {
+      window.removeEventListener('popstate', onRouteChange);
+      window.removeEventListener('hashchange', onRouteChange);
+    };
   }, []);
 
-  const handleNavigate = useCallback((page: PageId, nextSubParam?: string) => {
-    setCurrentPage(page);
-    setSubParam(nextSubParam);
-    const nextPath = PAGE_PATHS[page];
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({ page }, '', nextPath);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  const handleNavigate = useCallback(
+    (page: PageId, nextSubParam?: string) => {
+      setCurrentPage(page);
+      setSubParam(nextSubParam);
+      const nextPath = PAGE_PATHS[page];
+      if (useHashRouting) {
+        const nextHash = page === 'home' ? '#/' : `#${nextPath}`;
+        if (window.location.hash !== nextHash) {
+          window.location.hash = nextHash;
+        }
+      } else if (window.location.pathname !== nextPath) {
+        window.history.pushState({ page }, '', nextPath);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [useHashRouting]
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAF9] text-[#181A18] dark:bg-[#0F1412] dark:text-[#F2F5F3] transition-colors duration-200">
