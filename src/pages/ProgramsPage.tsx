@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, Maximize2, MessageCircle } from 'lucide-react';
 import type { Lang, PageId } from '../types';
 import { getCopy } from '../data/translations';
+import { SITE_IMAGES, SITE_LINKS } from '../data/siteAssets';
+import { PosterLightbox, type PosterItem } from '../components/PosterLightbox';
 
 interface ProgramsPageProps {
   lang: Lang;
@@ -11,6 +13,17 @@ interface ProgramsPageProps {
 export function ProgramsPage({ lang, onNavigate }: ProgramsPageProps) {
   const t = getCopy(lang);
   const [duration, setDuration] = useState<'1m' | '3m'>('1m');
+  const [activePoster, setActivePoster] = useState<PosterItem | null>(null);
+
+  const plansFlyer: PosterItem = {
+    src: SITE_IMAGES.flyerPlans,
+    titleEn: 'Vedika Health Transformation Journey — Detailed Plans Flyer',
+    titleHi: 'वेदिका हेल्थ ट्रांसफॉर्मेशन जर्नी — विस्तृत प्लान फ्लायर',
+    captionEn:
+      '3 Days Free Trial, Vedika Reset (10 Days), and Vedika Transform (1 Month) with Result Guarantee.',
+    captionHi:
+      '3 दिन का फ्री ट्रायल, वेदिका रीसेट (10 दिन) और वेदिका ट्रांसफॉर्म (1 महीना) — रिज़ल्ट गारंटी के साथ।',
+  };
 
   const comparisonRows =
     lang === 'en'
@@ -221,6 +234,47 @@ export function ProgramsPage({ lang, onNavigate }: ProgramsPageProps) {
           </table>
         </div>
       </section>
+
+      {/* Official Detailed Plans & 3 Days Free Trial Flyer */}
+      <section className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-[#161D1A] p-6 sm:p-8 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              {lang === 'en' ? 'Official Center Brochure & Result Guarantee' : 'आधिकारिक प्लान फ्लायर एवं रिज़ल्ट गारंटी'}
+            </p>
+            <h2 className="font-display text-2xl sm:text-3xl font-bold text-stone-900 dark:text-stone-50">
+              {lang === 'en' ? 'Detailed Plans & 3 Days Free Trial Flyer' : 'विस्तृत प्लान और 3-दिन फ्री ट्रायल फ्लायर'}
+            </h2>
+          </div>
+          <a
+            href={SITE_LINKS.bookFreeCallWhatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cta-calm-shift inline-flex items-center gap-2 text-white text-xs sm:text-sm font-semibold px-5 py-2.5 rounded-lg whitespace-nowrap self-start sm:self-auto"
+          >
+            <MessageCircle className="w-4 h-4" aria-hidden="true" />
+            <span>{lang === 'en' ? 'Book Free Call on WhatsApp' : 'व्हाट्सएप पर फ्री कॉल बुक करें'}</span>
+          </a>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setActivePoster(plansFlyer)}
+          className="group relative block w-full overflow-hidden rounded-xl border border-stone-200 dark:border-stone-700 cursor-pointer text-left"
+        >
+          <img
+            src={SITE_IMAGES.flyerPlans}
+            alt={plansFlyer.titleEn}
+            className="w-full h-auto object-cover group-hover:scale-[1.01] transition-transform duration-300"
+          />
+          <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-950/75 text-white text-xs font-semibold backdrop-blur-sm">
+            <Maximize2 className="w-3.5 h-3.5" aria-hidden="true" />
+            {lang === 'en' ? 'Tap to Read Full Flyer' : 'पूरा फ्लायर बड़ा करके पढ़ें'}
+          </span>
+        </button>
+      </section>
+
+      <PosterLightbox poster={activePoster} lang={lang} onClose={() => setActivePoster(null)} />
     </div>
   );
 }

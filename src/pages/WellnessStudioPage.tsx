@@ -5,6 +5,7 @@ import {
   Check,
   Copy,
   Download,
+  Maximize2,
   Minus,
   Plus,
   Printer,
@@ -15,8 +16,10 @@ import {
 } from 'lucide-react';
 import type { FoodCategory, Lang, PageId, PlateEntry, SavedPlate } from '../types';
 import { INDIAN_FOODS, PREMADE_PLATES, computePlateTotals } from '../data/indianFoods';
-import { SITE_LINKS } from '../data/siteAssets';
+import { SITE_IMAGES, SITE_LINKS } from '../data/siteAssets';
 import { submitLead } from '../utils/api';
+import { IndianFoodGraphic, getFoodPlacement } from '../components/IndianFoodGraphic';
+import { PosterLightbox, type PosterItem } from '../components/PosterLightbox';
 
 interface WellnessStudioPageProps {
   lang: Lang;
@@ -59,6 +62,20 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
   const [waistCm, setWaistCm] = useState('92');
   const [evalComputed, setEvalComputed] = useState(true);
   const [leadSentNotice, setLeadSentNotice] = useState('');
+  const [activePoster, setActivePoster] = useState<PosterItem | null>(null);
+  const [dailyBasis, setDailyBasis] = useState<'standard' | 'personal-loss' | 'personal-maintain'>(
+    'standard'
+  );
+
+  const bodyNumbersPoster: PosterItem = {
+    src: SITE_IMAGES.posterBodyNumbers,
+    titleEn: 'Know Your Body Numbers — Body Composition Analysis',
+    titleHi: 'अपने शरीर के नंबर जानें — बॉडी कंपोज़िशन विश्लेषण',
+    captionEn:
+      'Go beyond weight: measure Body Fat %, Visceral Fat, Muscle Mass, Body Water, Bone Mass, and Metabolic Age at our Dehradun center.',
+    captionHi:
+      'सिर्फ़ वजन नहीं: बॉडी फैट %, विसरल फैट, मसल मास, पानी, बोन मास और मेटाबॉलिक एज की पूरी जांच।',
+  };
 
   const evalResults = useMemo(() => {
     const w = parseFloat(weightKg);
@@ -190,6 +207,60 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
   const [saveToast, setSaveToast] = useState('');
 
   const currentTotals = useMemo(() => computePlateTotals(plateEntries), [plateEntries]);
+
+  // Daily Required Value (DV) reference targets (ICMR-NIN Indian adult default or user's Tab 1 target)
+  const dailyTargets = useMemo(() => {
+    if (dailyBasis !== 'standard' && evalResults) {
+      const calories =
+        dailyBasis === 'personal-loss' ? evalResults.fatLossCal : evalResults.maintainCal;
+      const protein = Math.max(50, evalResults.dailyProtein);
+      const fat = Math.max(40, Math.round((calories * 0.25) / 9));
+      const carbs = Math.max(100, Math.round((calories - protein * 4 - fat * 9) / 4));
+      return {
+        calories,
+        protein,
+        carbs,
+        fat,
+        fibre: 30,
+        labelEn:
+          dailyBasis === 'personal-loss'
+            ? `Your Fat Loss Target (${calories} kcal/day)`
+            : `Your Maintain Target (${calories} kcal/day)`,
+        labelHi:
+          dailyBasis === 'personal-loss'
+            ? `आपका फैट लॉस लक्ष्य (${calories} kcal/दिन)`
+            : `आपका सामान्य लक्ष्य (${calories} kcal/दिन)`,
+      };
+    }
+    return {
+      calories: 2000,
+      protein: 60,
+      carbs: 260,
+      fat: 65,
+      fibre: 30,
+      labelEn: 'Standard Indian Adult Daily Need (2000 kcal)',
+      labelHi: 'सामान्य वयस्क दैनिक आवश्यकता (2000 kcal)',
+    };
+  }, [dailyBasis, evalResults]);
+
+  const pctDV = (value: number, target: number) =>
+    target > 0 ? Math.round((value / target) * 100) : 0;
+
+  const groupedThaliItems = useMemo(() => {
+    const resolved = plateEntries
+      .map((entry) => {
+        const food = INDIAN_FOODS.find((f) => f.id === entry.foodId);
+        if (!food) return null;
+        return { entry, food, placement: getFoodPlacement(food.id) };
+      })
+      .filter((x): x is NonNullable<typeof x> => Boolean(x));
+
+    return {
+      katoris: resolved.filter((x) => x.placement === 'katori' || x.placement === 'side'),
+      mains: resolved.filter((x) => x.placement === 'main'),
+      drinks: resolved.filter((x) => x.placement === 'drink'),
+    };
+  }, [plateEntries]);
 
   const plateFeedback = useMemo(() => {
     if (plateEntries.length === 0) {
@@ -802,6 +873,38 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                 {lang === 'en' ? 'Enter valid weight, height, and age to view your report.' : 'रिपोर्ट देखने के लिए सही वजन, ऊंचाई और आयु भरें।'}
               </div>
             )}
+
+            {/* Know Your Body Numbers Poster Card */}
+            <div className="no-print rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-[#161D1A] p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                    {lang === 'en' ? 'Want Deeper Body Numbers?' : 'क्या आप शरीर की पूरी जांच चाहते हैं?'}
+                  </p>
+                  <h3 className="font-display text-lg font-bold text-stone-900 dark:text-stone-50">
+                    {lang === 'en'
+                      ? 'Body Composition Analysis (Visceral Fat, Muscle & Metabolic Age)'
+                      : 'बॉडी कंपोज़िशन विश्लेषण (विसरल फैट, मसल मास और मेटाबॉलिक एज)'}
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActivePoster(bodyNumbersPoster)}
+                className="group relative block w-full overflow-hidden rounded-xl border border-stone-200 dark:border-stone-700 cursor-pointer text-left"
+              >
+                <img
+                  src={SITE_IMAGES.posterBodyNumbers}
+                  alt={bodyNumbersPoster.titleEn}
+                  loading="lazy"
+                  className="w-full h-auto object-cover group-hover:scale-[1.01] transition-transform duration-300"
+                />
+                <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-950/75 text-white text-xs font-semibold backdrop-blur-sm">
+                  <Maximize2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  {lang === 'en' ? 'View Full Poster' : 'पूरा पोस्टर देखें'}
+                </span>
+              </button>
+            </div>
           </div>
         </section>
       )}
@@ -853,7 +956,7 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                 ))}
               </div>
 
-              <div className="max-h-[440px] overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800 pr-1">
+              <div className="max-h-[540px] overflow-y-auto divide-y divide-stone-100 dark:divide-stone-800 pr-1">
                 {plateCatalog.map((food) => (
                   <div
                     key={food.id}
@@ -861,15 +964,18 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                     onDragStart={(e) => {
                       e.dataTransfer.setData('text/plain', food.id);
                     }}
-                    className="py-2.5 flex items-center justify-between gap-3 cursor-grab active:cursor-grabbing hover:bg-stone-50 dark:hover:bg-stone-800/40 px-2 rounded-lg"
+                    className="py-2.5 flex items-center justify-between gap-2.5 cursor-grab active:cursor-grabbing hover:bg-stone-50 dark:hover:bg-stone-800/40 px-2 rounded-lg"
                   >
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
-                        {lang === 'en' ? food.nameEn : food.nameHi}
-                      </p>
-                      <p className="text-xs text-stone-500 dark:text-stone-400 tabular-nums">
-                        {lang === 'en' ? food.servingEn : food.servingHi} · {food.calories} kcal · P {food.protein}g
-                      </p>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <IndianFoodGraphic foodId={food.id} size={38} />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-stone-900 dark:text-stone-100 truncate">
+                          {lang === 'en' ? food.nameEn : food.nameHi}
+                        </p>
+                        <p className="text-xs text-stone-500 dark:text-stone-400 tabular-nums">
+                          {lang === 'en' ? food.servingEn : food.servingHi} · {food.calories} kcal · P {food.protein}g
+                        </p>
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -884,7 +990,7 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
               </div>
             </div>
 
-            {/* Center & Right: Visual Circular Thali Plate + Live Macros + Save */}
+            {/* Center & Right: Realistic Circular Steel Thali Plate + Live Macros (% DV) + Save */}
             <div className="lg:col-span-7 space-y-6">
               {/* Visual Interactive Thali Dropzone */}
               <div
@@ -899,7 +1005,7 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                   const id = e.dataTransfer.getData('text/plain');
                   if (id) addFoodToPlate(id);
                 }}
-                className={`rounded-2xl border-2 transition-colors p-6 sm:p-8 bg-white dark:bg-[#161D1A] space-y-6 ${
+                className={`rounded-2xl border-2 transition-colors p-5 sm:p-7 bg-white dark:bg-[#161D1A] space-y-6 ${
                   isDragOver
                     ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 border-dashed'
                     : 'border-stone-200 dark:border-stone-800'
@@ -912,8 +1018,8 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                     </h2>
                     <p className="text-xs text-stone-500 dark:text-stone-400">
                       {lang === 'en'
-                        ? 'Drop food items onto the steel thali below or adjust servings.'
-                        : 'नीचे दी गई थाली में भोजन जोड़ें या मात्रा घटाएं-बढ़ाएं।'}
+                        ? 'Drag or tap Indian foods to arrange chapati, rice, dal & katoris on your stainless-steel thali.'
+                        : 'स्टील की थाली पर रोटी, चावल, दाल और कटोरियां सजाने के लिए भोजन जोड़ें या मात्रा बदलें।'}
                     </p>
                   </div>
                   <button
@@ -926,103 +1032,337 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                   </button>
                 </div>
 
-                {/* Circular Steel Thali Representation */}
-                <div className="mx-auto max-w-md aspect-square sm:aspect-auto sm:min-h-[260px] rounded-full sm:rounded-[3rem] border-4 border-stone-300 dark:border-stone-700 bg-gradient-to-br from-stone-100 via-stone-50 to-stone-200/70 dark:from-stone-800 dark:via-[#1B2420] dark:to-stone-900 p-6 flex flex-col items-center justify-center shadow-inner">
-                  {plateEntries.length === 0 ? (
-                    <p className="text-sm text-center text-stone-500 dark:text-stone-400 max-w-[26ch]">
-                      {lang === 'en'
-                        ? 'Drop foods here or click "+ Add" on the left to build your thali.'
-                        : 'थाली बनाने के लिए बाईं ओर से भोजन जोड़ें।'}
-                    </p>
-                  ) : (
-                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {plateEntries.map((entry) => {
-                        const food = INDIAN_FOODS.find((f) => f.id === entry.foodId);
-                        if (!food) return null;
-                        return (
-                          <div
-                            key={entry.foodId}
-                            className="rounded-xl bg-white/95 dark:bg-[#141C18] border border-stone-200 dark:border-stone-700 px-3 py-2 flex items-center justify-between gap-2"
-                          >
+                {/* Realistic Dining Mat + Brushed Stainless-Steel Circular Thali */}
+                <div className="relative rounded-2xl bg-gradient-to-br from-[#f6efe4] via-[#ede5d8] to-[#e4d9c8] dark:from-[#1d2521] dark:via-[#171f1b] dark:to-[#111714] border border-stone-200/90 dark:border-stone-800 p-4 sm:p-6 flex flex-col items-center justify-center overflow-hidden">
+                  {/* Drinks placed neatly beside the steel thali (top-right like a real Indian meal) */}
+                  {groupedThaliItems.drinks.length > 0 && (
+                    <div className="w-full flex flex-wrap justify-end gap-2.5 mb-2 sm:mb-0 sm:absolute sm:top-4 sm:right-4 sm:w-auto z-20">
+                      {groupedThaliItems.drinks.map(({ entry, food }) => (
+                        <button
+                          key={entry.foodId}
+                          type="button"
+                          onClick={() => updateFoodQty(entry.foodId, 1)}
+                          title={`${lang === 'en' ? food.nameEn : food.nameHi} (${entry.quantity}×)`}
+                          className="group relative flex flex-col items-center cursor-pointer"
+                        >
+                          <div className="relative">
+                            <IndianFoodGraphic foodId={food.id} size={52} quantity={entry.quantity} />
+                            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-emerald-700 text-white font-mono text-[10px] font-bold flex items-center justify-center shadow">
+                              {entry.quantity}×
+                            </span>
+                          </div>
+                          <span className="mt-0.5 max-w-[82px] truncate text-[10px] font-semibold text-stone-800 dark:text-stone-200 bg-white/85 dark:bg-stone-900/85 px-1.5 py-0.5 rounded shadow-xs">
+                            {lang === 'en' ? food.nameEn.split('(')[0].trim() : food.nameHi.split('(')[0].trim()}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Gleaming Brushed Stainless-Steel Circular Thali */}
+                  <div className="relative w-full max-w-[340px] sm:max-w-[380px] aspect-square rounded-full p-3 sm:p-4 bg-gradient-to-br from-slate-200 via-slate-50 to-slate-300 dark:from-slate-600 dark:via-slate-700 dark:to-slate-800 shadow-[0_14px_34px_rgba(15,23,42,0.22)] ring-2 ring-slate-300/90 dark:ring-slate-500/70 flex items-center justify-center">
+                    {/* Inner Pressed Steel Rim */}
+                    <div className="w-full h-full rounded-full bg-[radial-gradient(circle_at_30%_25%,#ffffff_0%,#e2e8f0_46%,#cbd5e1_85%,#94a3b8_100%)] dark:bg-[radial-gradient(circle_at_30%_25%,#475569_0%,#334155_52%,#1e293b_100%)] border-2 border-white/80 dark:border-slate-500/60 shadow-[inset_0_6px_18px_rgba(15,23,42,0.18)] p-4 sm:p-6 flex flex-col items-center justify-center gap-3 overflow-hidden">
+                      {plateEntries.length === 0 ? (
+                        <div className="text-center space-y-2 px-4">
+                          <div className="flex items-center justify-center gap-1 opacity-75">
+                            <IndianFoodGraphic foodId="roti" size={40} />
+                            <IndianFoodGraphic foodId="moong-dal" size={38} />
+                            <IndianFoodGraphic foodId="steamed-rice" size={40} />
+                          </div>
+                          <p className="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-200 max-w-[22ch] mx-auto">
+                            {lang === 'en'
+                              ? 'Drop roti, rice, dal or sabzi here to build your realistic thali.'
+                              : 'अपनी थाली सजाने के लिए रोटी, चावल, दाल या सब्जी जोड़ें।'}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Top Row: Steel Katoris (Dal, Sabzi, Curd, Sides) */}
+                          {groupedThaliItems.katoris.length > 0 && (
+                            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 max-w-[92%]">
+                              {groupedThaliItems.katoris.map(({ entry, food }) => (
+                                <button
+                                  key={entry.foodId}
+                                  type="button"
+                                  onClick={() => updateFoodQty(entry.foodId, 1)}
+                                  title={`${lang === 'en' ? food.nameEn : food.nameHi} — ${Math.round(food.calories * entry.quantity)} kcal`}
+                                  className="group relative flex flex-col items-center transition-transform hover:scale-105 cursor-pointer"
+                                >
+                                  <div className="relative">
+                                    <IndianFoodGraphic
+                                      foodId={food.id}
+                                      size={groupedThaliItems.katoris.length > 3 ? 52 : 60}
+                                      quantity={entry.quantity}
+                                    />
+                                    <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1 rounded-full bg-emerald-700 text-white font-mono text-[10px] font-bold flex items-center justify-center shadow">
+                                      {entry.quantity}×
+                                    </span>
+                                  </div>
+                                  <span className="mt-0.5 max-w-[76px] truncate text-[10px] font-semibold text-slate-800 dark:text-slate-100 bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded">
+                                    {lang === 'en'
+                                      ? food.nameEn.split('(')[0].trim()
+                                      : food.nameHi.split('(')[0].trim()}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Bottom / Main Section: Chapati, Rice, Salad, Paneer */}
+                          {groupedThaliItems.mains.length > 0 && (
+                            <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 max-w-[92%]">
+                              {groupedThaliItems.mains.map(({ entry, food }) => (
+                                <button
+                                  key={entry.foodId}
+                                  type="button"
+                                  onClick={() => updateFoodQty(entry.foodId, 1)}
+                                  title={`${lang === 'en' ? food.nameEn : food.nameHi} — ${Math.round(food.calories * entry.quantity)} kcal`}
+                                  className="group relative flex flex-col items-center transition-transform hover:scale-105 cursor-pointer"
+                                >
+                                  <div className="relative">
+                                    <IndianFoodGraphic
+                                      foodId={food.id}
+                                      size={groupedThaliItems.mains.length > 3 ? 56 : 68}
+                                      quantity={entry.quantity}
+                                    />
+                                    <span className="absolute -top-1 -right-1 min-w-[22px] h-5 px-1 rounded-full bg-emerald-700 text-white font-mono text-[10px] font-bold flex items-center justify-center shadow">
+                                      {entry.quantity}×
+                                    </span>
+                                  </div>
+                                  <span className="mt-0.5 max-w-[84px] truncate text-[10px] font-semibold text-slate-800 dark:text-slate-100 bg-white/80 dark:bg-slate-900/80 px-1.5 py-0.5 rounded">
+                                    {lang === 'en'
+                                      ? food.nameEn.split('(')[0].trim()
+                                      : food.nameHi.split('(')[0].trim()}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {groupedThaliItems.katoris.length === 0 &&
+                            groupedThaliItems.mains.length === 0 &&
+                            groupedThaliItems.drinks.length > 0 && (
+                              <p className="text-xs text-slate-600 dark:text-slate-200 text-center max-w-[22ch]">
+                                {lang === 'en'
+                                  ? 'Drink placed beside thali — add roti, rice, dal or salad!'
+                                  : 'पेय थाली के पास रखा है — अब रोटी, चावल, दाल या सलाद जोड़ें!'}
+                              </p>
+                            )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Serving Controls Strip (Quick +/- adjustments for items on plate) */}
+                {plateEntries.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {plateEntries.map((entry) => {
+                      const food = INDIAN_FOODS.find((f) => f.id === entry.foodId);
+                      if (!food) return null;
+                      return (
+                        <div
+                          key={entry.foodId}
+                          className="rounded-xl bg-[#FAFAF9] dark:bg-[#111714] border border-stone-200 dark:border-stone-800 px-3 py-2 flex items-center justify-between gap-2"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <IndianFoodGraphic foodId={food.id} size={32} quantity={entry.quantity} />
                             <div className="min-w-0">
                               <p className="text-xs font-semibold text-stone-900 dark:text-stone-100 truncate">
                                 {lang === 'en' ? food.nameEn : food.nameHi}
                               </p>
                               <p className="text-[11px] font-mono text-stone-500 tabular-nums">
-                                {Math.round(food.calories * entry.quantity)} kcal
+                                {Math.round(food.calories * entry.quantity)} kcal · P{' '}
+                                {(food.protein * entry.quantity).toFixed(1)}g
                               </p>
                             </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <button
-                                type="button"
-                                aria-label="Decrease quantity"
-                                onClick={() => updateFoodQty(entry.foodId, -1)}
-                                className="w-6 h-6 rounded bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 inline-flex items-center justify-center cursor-pointer"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <span className="font-mono text-xs font-bold w-5 text-center tabular-nums">
-                                {entry.quantity}
-                              </span>
-                              <button
-                                type="button"
-                                aria-label="Increase quantity"
-                                onClick={() => updateFoodQty(entry.foodId, 1)}
-                                className="w-6 h-6 rounded bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 inline-flex items-center justify-center cursor-pointer"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
-                            </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              aria-label="Decrease quantity"
+                              onClick={() => updateFoodQty(entry.foodId, -1)}
+                              className="w-6 h-6 rounded bg-stone-200/80 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 inline-flex items-center justify-center cursor-pointer"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="font-mono text-xs font-bold w-5 text-center tabular-nums">
+                              {entry.quantity}
+                            </span>
+                            <button
+                              type="button"
+                              aria-label="Increase quantity"
+                              onClick={() => updateFoodQty(entry.foodId, 1)}
+                              className="w-6 h-6 rounded bg-stone-200/80 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 inline-flex items-center justify-center cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
-                {/* Macro Readout Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">
-                  <div className="rounded-xl bg-[#FAFAF9] dark:bg-[#111714] border border-stone-200 dark:border-stone-800 p-3">
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                      {lang === 'en' ? 'Calories' : 'कैलोरी'}
+                {/* Daily Required Value (% DV) Reference Switcher */}
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs font-semibold text-stone-700 dark:text-stone-300">
+                      {lang === 'en'
+                        ? 'Estimated % of Daily Required Value (% DV)'
+                        : 'दैनिक आवश्यकता का अनुमानित प्रतिशत (% DV)'}
                     </p>
-                    <p className="font-mono text-xl font-bold text-stone-900 dark:text-stone-50 tabular-nums">
-                      {currentTotals.calories}
-                    </p>
-                    <p className="text-[10px] text-stone-500">kcal</p>
+                    <div className="no-print inline-flex flex-wrap items-center gap-1 rounded-lg bg-stone-100 dark:bg-stone-800/80 p-1 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => setDailyBasis('standard')}
+                        className={`px-2 py-1 rounded-md font-semibold cursor-pointer transition-colors ${
+                          dailyBasis === 'standard'
+                            ? 'bg-white dark:bg-[#161D1A] text-emerald-800 dark:text-emerald-400 shadow-xs'
+                            : 'text-stone-600 dark:text-stone-300'
+                        }`}
+                      >
+                        {lang === 'en' ? '2000 kcal Std' : '2000 kcal मानक'}
+                      </button>
+                      {evalResults && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setDailyBasis('personal-loss')}
+                            className={`px-2 py-1 rounded-md font-semibold cursor-pointer transition-colors ${
+                              dailyBasis === 'personal-loss'
+                                ? 'bg-white dark:bg-[#161D1A] text-emerald-800 dark:text-emerald-400 shadow-xs'
+                                : 'text-stone-600 dark:text-stone-300'
+                            }`}
+                          >
+                            {lang === 'en'
+                              ? `Fat Loss (${evalResults.fatLossCal})`
+                              : `फैट लॉस (${evalResults.fatLossCal})`}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDailyBasis('personal-maintain')}
+                            className={`px-2 py-1 rounded-md font-semibold cursor-pointer transition-colors ${
+                              dailyBasis === 'personal-maintain'
+                                ? 'bg-white dark:bg-[#161D1A] text-emerald-800 dark:text-emerald-400 shadow-xs'
+                                : 'text-stone-600 dark:text-stone-300'
+                            }`}
+                          >
+                            {lang === 'en'
+                              ? `Maintain (${evalResults.maintainCal})`
+                              : `सामान्य (${evalResults.maintainCal})`}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                  <div className="rounded-xl bg-[#FAFAF9] dark:bg-[#111714] border border-stone-200 dark:border-stone-800 p-3">
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                      {lang === 'en' ? 'Protein' : 'प्रोटीन'}
-                    </p>
-                    <p className="font-mono text-xl font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">
-                      {currentTotals.protein}g
-                    </p>
+
+                  {/* Macro Readout Grid with % Daily Required Value + Progress Bars */}
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    {(
+                      [
+                        {
+                          key: 'calories',
+                          labelEn: 'Calories',
+                          labelHi: 'कैलोरी',
+                          value: currentTotals.calories,
+                          unit: 'kcal',
+                          target: dailyTargets.calories,
+                          pct: pctDV(currentTotals.calories, dailyTargets.calories),
+                          valueColor: 'text-stone-900 dark:text-stone-50',
+                          barColor:
+                            pctDV(currentTotals.calories, dailyTargets.calories) > 50
+                              ? 'bg-amber-600'
+                              : 'bg-emerald-600',
+                        },
+                        {
+                          key: 'protein',
+                          labelEn: 'Protein',
+                          labelHi: 'प्रोटीन',
+                          value: currentTotals.protein,
+                          unit: 'g',
+                          target: dailyTargets.protein,
+                          pct: pctDV(currentTotals.protein, dailyTargets.protein),
+                          valueColor: 'text-emerald-700 dark:text-emerald-400',
+                          barColor: 'bg-emerald-600',
+                        },
+                        {
+                          key: 'carbs',
+                          labelEn: 'Carbs',
+                          labelHi: 'कार्ब्स',
+                          value: currentTotals.carbs,
+                          unit: 'g',
+                          target: dailyTargets.carbs,
+                          pct: pctDV(currentTotals.carbs, dailyTargets.carbs),
+                          valueColor: 'text-stone-900 dark:text-stone-50',
+                          barColor:
+                            pctDV(currentTotals.carbs, dailyTargets.carbs) > 55
+                              ? 'bg-amber-600'
+                              : 'bg-sky-600',
+                        },
+                        {
+                          key: 'fat',
+                          labelEn: 'Fat',
+                          labelHi: 'फैट',
+                          value: currentTotals.fat,
+                          unit: 'g',
+                          target: dailyTargets.fat,
+                          pct: pctDV(currentTotals.fat, dailyTargets.fat),
+                          valueColor: 'text-stone-900 dark:text-stone-50',
+                          barColor:
+                            pctDV(currentTotals.fat, dailyTargets.fat) > 50
+                              ? 'bg-red-600'
+                              : 'bg-amber-500',
+                        },
+                        {
+                          key: 'fibre',
+                          labelEn: 'Fibre',
+                          labelHi: 'फाइबर',
+                          value: currentTotals.fibre,
+                          unit: 'g',
+                          target: dailyTargets.fibre,
+                          pct: pctDV(currentTotals.fibre, dailyTargets.fibre),
+                          valueColor: 'text-teal-700 dark:text-teal-400',
+                          barColor: 'bg-teal-600',
+                        },
+                      ] as const
+                    ).map((m, idx) => (
+                      <div
+                        key={m.key}
+                        className={`rounded-xl bg-[#FAFAF9] dark:bg-[#111714] border border-stone-200 dark:border-stone-800 p-3 text-left space-y-1.5 ${
+                          idx === 4 ? 'col-span-2 sm:col-span-1' : ''
+                        }`}
+                      >
+                        <div className="flex items-baseline justify-between gap-1">
+                          <p className="text-[11px] font-medium text-stone-500 dark:text-stone-400">
+                            {lang === 'en' ? m.labelEn : m.labelHi}
+                          </p>
+                          <span className="font-mono text-[11px] font-bold text-emerald-800 dark:text-emerald-400 tabular-nums">
+                            {m.pct}% DV
+                          </span>
+                        </div>
+                        <p className={`font-mono text-lg sm:text-xl font-bold tabular-nums ${m.valueColor}`}>
+                          {m.value}
+                          <span className="text-xs font-medium ml-0.5">{m.unit}</span>
+                        </p>
+                        <div className="w-full h-1.5 rounded-full bg-stone-200 dark:bg-stone-800 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${m.barColor}`}
+                            style={{ width: `${Math.min(100, m.pct)}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] font-mono text-stone-500 dark:text-stone-400 tabular-nums">
+                          {lang === 'en' ? `of ${m.target}${m.unit}/day` : `/${m.target}${m.unit} दैनिक`}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                  <div className="rounded-xl bg-[#FAFAF9] dark:bg-[#111714] border border-stone-200 dark:border-stone-800 p-3">
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                      {lang === 'en' ? 'Carbs' : 'कार्ब्स'}
-                    </p>
-                    <p className="font-mono text-xl font-bold text-stone-900 dark:text-stone-50 tabular-nums">
-                      {currentTotals.carbs}g
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-[#FAFAF9] dark:bg-[#111714] border border-stone-200 dark:border-stone-800 p-3">
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                      {lang === 'en' ? 'Fat' : 'फैट'}
-                    </p>
-                    <p className="font-mono text-xl font-bold text-stone-900 dark:text-stone-50 tabular-nums">
-                      {currentTotals.fat}g
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-[#FAFAF9] dark:bg-[#111714] border border-stone-200 dark:border-stone-800 p-3 col-span-2 sm:col-span-1">
-                    <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                      {lang === 'en' ? 'Fibre' : 'फाइबर'}
-                    </p>
-                    <p className="font-mono text-xl font-bold text-teal-700 dark:text-teal-400 tabular-nums">
-                      {currentTotals.fibre}g
-                    </p>
-                  </div>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                    {lang === 'en'
+                      ? `Basis: ${dailyTargets.labelEn}. A single balanced main meal typically provides ~25–35% of daily calories, protein, and fibre.`
+                      : `आधार: ${dailyTargets.labelHi}। एक संतुलित मुख्य भोजन आमतौर पर दैनिक कैलोरी, प्रोटीन और फाइबर का ~25–35% देता है।`}
+                  </p>
                 </div>
 
                 {/* Smart Health Assessment */}
@@ -1170,6 +1510,16 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                           {lang === 'en' ? 'Load' : 'लोड'}
                         </button>
                       </div>
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        {plate.entries.map((entry) => (
+                          <IndianFoodGraphic
+                            key={entry.foodId}
+                            foodId={entry.foodId}
+                            size={30}
+                            quantity={entry.quantity}
+                          />
+                        ))}
+                      </div>
                       <ul className="text-xs text-stone-600 dark:text-stone-400 space-y-1">
                         {plate.entries.map((entry) => {
                           const f = INDIAN_FOODS.find((x) => x.id === entry.foodId);
@@ -1186,23 +1536,38 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                     <div className="pt-3 border-t border-stone-200 dark:border-stone-800 grid grid-cols-2 gap-y-2 text-xs tabular-nums">
                       <span className="text-stone-500">Calories</span>
                       <span className="font-mono font-bold text-right text-stone-900 dark:text-stone-100">
-                        {totals.calories} kcal
+                        {totals.calories} kcal{' '}
+                        <span className="text-[10px] font-medium text-stone-500">
+                          ({pctDV(totals.calories, dailyTargets.calories)}%)
+                        </span>
                       </span>
                       <span className="text-stone-500">Protein</span>
                       <span className="font-mono font-bold text-right text-emerald-700 dark:text-emerald-400">
-                        {totals.protein} g
+                        {totals.protein} g{' '}
+                        <span className="text-[10px] font-medium opacity-80">
+                          ({pctDV(totals.protein, dailyTargets.protein)}%)
+                        </span>
                       </span>
                       <span className="text-stone-500">Carbs</span>
                       <span className="font-mono font-semibold text-right text-stone-800 dark:text-stone-200">
-                        {totals.carbs} g
+                        {totals.carbs} g{' '}
+                        <span className="text-[10px] font-medium text-stone-500">
+                          ({pctDV(totals.carbs, dailyTargets.carbs)}%)
+                        </span>
                       </span>
                       <span className="text-stone-500">Fat</span>
                       <span className="font-mono font-semibold text-right text-stone-800 dark:text-stone-200">
-                        {totals.fat} g
+                        {totals.fat} g{' '}
+                        <span className="text-[10px] font-medium text-stone-500">
+                          ({pctDV(totals.fat, dailyTargets.fat)}%)
+                        </span>
                       </span>
                       <span className="text-stone-500">Fibre</span>
                       <span className="font-mono font-bold text-right text-teal-700 dark:text-teal-400">
-                        {totals.fibre} g
+                        {totals.fibre} g{' '}
+                        <span className="text-[10px] font-medium opacity-80">
+                          ({pctDV(totals.fibre, dailyTargets.fibre)}%)
+                        </span>
                       </span>
                     </div>
                   </div>
@@ -1328,12 +1693,17 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
                       className="hover:bg-stone-50 dark:hover:bg-stone-800/40 transition-colors"
                     >
                       <td className="py-3 px-4">
-                        <p className="font-semibold text-stone-900 dark:text-stone-100">
-                          {lang === 'en' ? food.nameEn : food.nameHi}
-                        </p>
-                        <p className="text-xs text-stone-500 dark:text-stone-400">
-                          {lang === 'en' ? food.servingEn : food.servingHi}
-                        </p>
+                        <div className="flex items-center gap-2.5">
+                          <IndianFoodGraphic foodId={food.id} size={32} />
+                          <div>
+                            <p className="font-semibold text-stone-900 dark:text-stone-100">
+                              {lang === 'en' ? food.nameEn : food.nameHi}
+                            </p>
+                            <p className="text-xs text-stone-500 dark:text-stone-400">
+                              {lang === 'en' ? food.servingEn : food.servingHi}
+                            </p>
+                          </div>
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-xs text-stone-600 dark:text-stone-300">
                         {food.category}
@@ -1380,6 +1750,8 @@ export function WellnessStudioPage({ lang, initialTab, onNavigate }: WellnessStu
           </div>
         </section>
       )}
+
+      <PosterLightbox poster={activePoster} lang={lang} onClose={() => setActivePoster(null)} />
     </div>
   );
 }

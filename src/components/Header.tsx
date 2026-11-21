@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Menu, X, Sun, Moon, Languages } from 'lucide-react';
+import { Menu, X, Sun, Moon, Languages, MessageCircle } from 'lucide-react';
 import type { Lang, PageId, Theme } from '../types';
 import { getCopy } from '../data/translations';
+import { SITE_IMAGES, SITE_LINKS } from '../data/siteAssets';
 
 interface HeaderProps {
   currentPage: PageId;
@@ -40,13 +41,18 @@ export function Header({
     <>
       <header className="sticky top-0 z-40 bg-[#FAFAF9]/95 dark:bg-[#0F1412]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-8">
-          {/* Zone 1: Single text element Brand wordmark */}
+          {/* Zone 1: Single clickable Brand logo */}
           <button
             type="button"
             onClick={() => handleLinkClick('home')}
-            className="font-display text-lg sm:text-xl font-bold tracking-tight text-stone-900 dark:text-stone-50 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 rounded"
+            aria-label={t.brand}
+            className="flex items-center shrink-0 cursor-pointer hover:opacity-90 transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 rounded"
           >
-            {t.brand}
+            <img
+              src={SITE_IMAGES.logoHorizontal}
+              alt={t.brand}
+              className="h-9 sm:h-11 w-auto object-contain dark:brightness-0 dark:invert"
+            />
           </button>
 
           {/* Zone 2: 5 clean single-line navigation links */}
@@ -73,15 +79,17 @@ export function Header({
             })}
           </nav>
 
-          {/* Zone 3: 1 Primary CTA button (+ mobile menu toggle on small screens) */}
+          {/* Zone 3: 1 Primary CTA button -> WhatsApp (+ mobile menu toggle on small screens) */}
           <div className="flex items-center gap-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => handleLinkClick('book')}
-              className="cta-calm-shift text-white text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-lg whitespace-nowrap shrink-0 cursor-pointer shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+            <a
+              href={SITE_LINKS.bookFreeCallWhatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cta-calm-shift inline-flex items-center gap-1.5 text-white text-xs sm:text-sm font-semibold px-4 sm:px-5 py-2.5 rounded-lg whitespace-nowrap shrink-0 cursor-pointer shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
             >
-              {t.nav.bookCta}
-            </button>
+              <MessageCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>{t.nav.bookCta}</span>
+            </a>
 
             <button
               type="button"

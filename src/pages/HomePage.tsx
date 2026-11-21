@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Check,
   ExternalLink,
+  Maximize2,
   MessageCircle,
   Phone,
   Send,
@@ -14,6 +15,7 @@ import { getCopy } from '../data/translations';
 import { SITE_IMAGES, SITE_LINKS } from '../data/siteAssets';
 import { BLOG_POSTS } from '../data/blogsData';
 import { SmartImage } from '../components/SmartImage';
+import { PosterLightbox, type PosterItem } from '../components/PosterLightbox';
 import { submitLead } from '../utils/api';
 
 interface HomePageProps {
@@ -27,6 +29,31 @@ export function HomePage({ lang, onNavigate }: HomePageProps) {
   const t = getCopy(lang);
   const [slideIndex, setSlideIndex] = useState(0);
   const [quoteIndex, setQuoteIndex] = useState(0);
+  const [activePoster, setActivePoster] = useState<PosterItem | null>(null);
+
+  const officialPosters: PosterItem[] = [
+    {
+      src: SITE_IMAGES.flyerPlans,
+      titleEn: 'Vedika Detailed Plans & 3-Day Free Trial',
+      titleHi: 'वेदिका विस्तृत प्लान और 3-दिन का फ्री ट्रायल',
+      captionEn: 'Compare Free Trial, Vedika Reset, and Vedika Transform plans with 100% Result Guarantee.',
+      captionHi: 'फ्री ट्रायल, वेदिका रीसेट और वेदिका ट्रांसफॉर्म प्लान की पूरी जानकारी।',
+    },
+    {
+      src: SITE_IMAGES.pamphletAbout,
+      titleEn: 'About Vedika Health & Wellness — Four Pillars',
+      titleHi: 'वेदिका हेल्थ एंड वेलनेस — स्वास्थ्य के चार स्तंभ',
+      captionEn: 'Targeting root causes, medicine-free habits, modern science + ancient wisdom, and coach contacts.',
+      captionHi: 'जड़ से स्वास्थ्य सुधार, आधुनिक विज्ञान व प्राचीन ज्ञान का संगम और कोच संपर्क।',
+    },
+    {
+      src: SITE_IMAGES.posterBodyNumbers,
+      titleEn: 'Know Your Body Numbers — Body Composition Analysis',
+      titleHi: 'अपने शरीर के नंबर जानें — बॉडी कंपोज़िशन विश्लेषण',
+      captionEn: 'Understand Body Fat %, Visceral Fat, Muscle Mass, Body Water, BMI, BMR & Metabolic Age.',
+      captionHi: 'बॉडी फैट %, विसरल फैट, मसल मास, पानी, BMI, BMR और मेटाबॉलिक एज की जांच।',
+    },
+  ];
 
   // Quick Lead Form state
   const [name, setName] = useState('');
@@ -464,7 +491,7 @@ export function HomePage({ lang, onNavigate }: HomePageProps) {
             <SmartImage
               src={SITE_IMAGES.coachNikhil}
               alt={SITE_LINKS.coaches.nikhil.nameEn}
-              className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl object-cover shrink-0"
+              className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl object-cover object-[50%_24%] shrink-0"
             />
             <div className="space-y-3">
               <div>
@@ -506,7 +533,7 @@ export function HomePage({ lang, onNavigate }: HomePageProps) {
             <SmartImage
               src={SITE_IMAGES.coachAnupamand}
               alt={SITE_LINKS.coaches.anupamand.nameEn}
-              className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl object-cover shrink-0"
+              className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl object-cover object-[50%_30%] shrink-0"
             />
             <div className="space-y-3">
               <div>
@@ -546,6 +573,61 @@ export function HomePage({ lang, onNavigate }: HomePageProps) {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* 7b. Official Vedika Brochures & Posters Gallery */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+              {lang === 'en' ? 'Official Flyers & Health Guides' : 'आधिकारिक ब्रोशर और हेल्थ गाइड'}
+            </p>
+            <h2 className="font-display text-2xl sm:text-4xl font-bold text-stone-900 dark:text-stone-50">
+              {lang === 'en' ? 'Explore Our Programs & Body Check Posters' : 'हमारे प्लान और बॉडी चेक पोस्टर देखें'}
+            </h2>
+          </div>
+          <a
+            href={SITE_LINKS.bookFreeCallWhatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800 dark:text-emerald-400 hover:underline self-start sm:self-auto"
+          >
+            <MessageCircle className="w-4 h-4" aria-hidden="true" />
+            <span>{lang === 'en' ? 'Ask Coach on WhatsApp' : 'व्हाट्सएप पर कोच से पूछें'}</span>
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {officialPosters.map((poster) => (
+            <button
+              key={poster.titleEn}
+              type="button"
+              onClick={() => setActivePoster(poster)}
+              className="group text-left rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-[#161D1A] overflow-hidden flex flex-col hover:border-emerald-600 dark:hover:border-emerald-500 transition-colors cursor-pointer"
+            >
+              <div className="relative aspect-[16/11] bg-stone-100 dark:bg-stone-900 overflow-hidden">
+                <img
+                  src={poster.src}
+                  alt={lang === 'en' ? poster.titleEn : poster.titleHi}
+                  loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                />
+                <span className="absolute bottom-2.5 right-2.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-stone-950/75 text-white text-[11px] font-semibold backdrop-blur-sm">
+                  <Maximize2 className="w-3 h-3" aria-hidden="true" />
+                  {lang === 'en' ? 'View Full' : 'पूरा देखें'}
+                </span>
+              </div>
+              <div className="p-5 space-y-1.5">
+                <h3 className="font-display text-base font-bold text-stone-900 dark:text-stone-50 group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
+                  {lang === 'en' ? poster.titleEn : poster.titleHi}
+                </h3>
+                <p className="text-xs leading-relaxed text-stone-600 dark:text-stone-400">
+                  {lang === 'en' ? poster.captionEn : poster.captionHi}
+                </p>
+              </div>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -780,9 +862,7 @@ export function HomePage({ lang, onNavigate }: HomePageProps) {
                 </span>
               </button>
               <a
-                href={`${SITE_LINKS.coaches.nikhil.whatsapp}?text=${encodeURIComponent(
-                  'Hello Vedika Wellness, I would like a free consultation.'
-                )}`}
+                href={SITE_LINKS.bookFreeCallWhatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-800 dark:text-emerald-400 hover:underline"
@@ -807,6 +887,8 @@ export function HomePage({ lang, onNavigate }: HomePageProps) {
           )}
         </div>
       </section>
+
+      <PosterLightbox poster={activePoster} lang={lang} onClose={() => setActivePoster(null)} />
     </div>
   );
 }

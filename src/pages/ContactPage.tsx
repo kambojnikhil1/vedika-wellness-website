@@ -88,7 +88,7 @@ export function ContactPage({ lang }: ContactPageProps) {
             <SmartImage
               src={SITE_IMAGES.coachNikhil}
               alt={SITE_LINKS.coaches.nikhil.nameEn}
-              className="w-20 h-20 rounded-xl object-cover shrink-0"
+              className="w-20 h-20 rounded-xl object-cover object-[50%_24%] shrink-0"
             />
             <div>
               <h2 className="font-display text-2xl font-bold text-stone-900 dark:text-stone-50">
@@ -142,7 +142,7 @@ export function ContactPage({ lang }: ContactPageProps) {
             <SmartImage
               src={SITE_IMAGES.coachAnupamand}
               alt={SITE_LINKS.coaches.anupamand.nameEn}
-              className="w-20 h-20 rounded-xl object-cover shrink-0"
+              className="w-20 h-20 rounded-xl object-cover object-[50%_30%] shrink-0"
             />
             <div>
               <h2 className="font-display text-2xl font-bold text-stone-900 dark:text-stone-50">
@@ -222,6 +222,25 @@ export function ContactPage({ lang }: ContactPageProps) {
               <p className="text-xs font-mono text-stone-500 dark:text-stone-400">
                 Google Maps Code: {SITE_LINKS.gmapCode}
               </p>
+
+              {/* Embedded Google Map for Dehradun Center */}
+              <div className="pt-2">
+                <div className="rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-900 shadow-sm">
+                  <iframe
+                    title={
+                      lang === 'en'
+                        ? 'Vedika Health and Wellness Dehradun Center Map'
+                        : 'वेदिका हेल्थ एंड वेलनेस देहरादून केंद्र का नक्शा'
+                    }
+                    src={SITE_LINKS.gmapsEmbedUrl}
+                    className="w-full h-60 sm:h-64 border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+
               <a
                 href={SITE_LINKS.gmapsUrl}
                 target="_blank"

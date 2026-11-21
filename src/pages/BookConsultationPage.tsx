@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, MessageCircle, Phone, Send } from 'lucide-react';
 import type { Lang } from '../types';
 import { getCopy } from '../data/translations';
-import { SITE_LINKS } from '../data/siteAssets';
+import { SITE_IMAGES, SITE_LINKS } from '../data/siteAssets';
+import { SmartImage } from '../components/SmartImage';
 import { submitLead } from '../utils/api';
 
 interface BookConsultationPageProps {
@@ -116,19 +117,38 @@ export function BookConsultationPage({ lang, initialGoal }: BookConsultationPage
             </ol>
           </div>
 
-          <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-[#161D1A] p-5 space-y-3 text-sm">
-            <p className="font-semibold text-stone-900 dark:text-stone-100">
-              {lang === 'en' ? 'Prefer instant chat or call?' : 'सीधे कॉल या व्हाट्सएप करना चाहते हैं?'}
-            </p>
+          <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-[#161D1A] p-5 space-y-4 text-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex -space-x-2 shrink-0">
+                <SmartImage
+                  src={SITE_IMAGES.coachNikhil}
+                  alt={SITE_LINKS.coaches.nikhil.nameEn}
+                  className="w-11 h-11 rounded-full object-cover object-[50%_24%] ring-2 ring-white dark:ring-[#161D1A]"
+                />
+                <SmartImage
+                  src={SITE_IMAGES.coachAnupamand}
+                  alt={SITE_LINKS.coaches.anupamand.nameEn}
+                  className="w-11 h-11 rounded-full object-cover object-[50%_30%] ring-2 ring-white dark:ring-[#161D1A]"
+                />
+              </div>
+              <div>
+                <p className="font-semibold text-stone-900 dark:text-stone-100">
+                  {lang === 'en' ? 'Prefer instant chat or call?' : 'सीधे कॉल या व्हाट्सएप करना चाहते हैं?'}
+                </p>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  {lang === 'en' ? 'Nikhil Kamboj & Mahant Anupamand Giri' : 'निखिल कांबोज व महंत अनुपमानंद गिरी'}
+                </p>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-3">
               <a
-                href={SITE_LINKS.coaches.nikhil.whatsapp}
+                href={SITE_LINKS.bookFreeCallWhatsapp}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs"
               >
                 <MessageCircle className="w-4 h-4" aria-hidden="true" />
-                WhatsApp Nikhil
+                {lang === 'en' ? 'WhatsApp Nikhil' : 'व्हाट्सएप निखिल'}
               </a>
               <a
                 href={SITE_LINKS.coaches.nikhil.tel}
@@ -161,8 +181,8 @@ export function BookConsultationPage({ lang, initialGoal }: BookConsultationPage
 
               <div className="flex flex-wrap gap-3 pt-2">
                 <a
-                  href={`${SITE_LINKS.coaches.nikhil.whatsapp}?text=${encodeURIComponent(
-                    `Hello Nikhil ji, I just booked a consultation on Vedika Wellness.\nName: ${submittedInfo.name}\nPhone: ${submittedInfo.phone}\nGoal: ${submittedInfo.goal}`
+                  href={`https://wa.me/918193989452?text=${encodeURIComponent(
+                    `Hi, I want some help related to my health issues.\nName: ${submittedInfo.name}\nPhone: ${submittedInfo.phone}\nGoal: ${submittedInfo.goal}`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

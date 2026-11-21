@@ -1,7 +1,7 @@
 import { ExternalLink, Mail, MapPin, Phone } from 'lucide-react';
 import type { Lang, PageId } from '../types';
 import { getCopy } from '../data/translations';
-import { SITE_LINKS } from '../data/siteAssets';
+import { SITE_IMAGES, SITE_LINKS } from '../data/siteAssets';
 
 interface FooterProps {
   lang: Lang;
@@ -20,9 +20,14 @@ export function Footer({ lang, onNavigate }: FooterProps) {
             <button
               type="button"
               onClick={() => onNavigate('home')}
-              className="font-display text-xl font-bold text-stone-900 dark:text-stone-50 cursor-pointer"
+              aria-label={t.brand}
+              className="inline-flex items-center cursor-pointer hover:opacity-90 transition-opacity"
             >
-              {t.brand}
+              <img
+                src={SITE_IMAGES.logoHorizontal}
+                alt={t.brand}
+                className="h-11 w-auto object-contain dark:brightness-0 dark:invert"
+              />
             </button>
             <p className="text-sm leading-relaxed text-stone-600 dark:text-stone-400">
               {lang === 'en'
@@ -96,7 +101,7 @@ export function Footer({ lang, onNavigate }: FooterProps) {
                   { id: 'blog', label: t.nav.blog },
                   { id: 'faq', label: t.nav.faq },
                   { id: 'contact', label: t.nav.contact },
-                  { id: 'book', label: t.nav.bookCta },
+                  { id: 'book', label: lang === 'en' ? '3-Day Free Demo Form' : '3-दिन फ्री डेमो फॉर्म' },
                   { id: 'admin', label: t.nav.admin },
                 ] as { id: PageId; label: string }[]
               ).map((item) => (
@@ -110,6 +115,16 @@ export function Footer({ lang, onNavigate }: FooterProps) {
                   </button>
                 </li>
               ))}
+              <li>
+                <a
+                  href={SITE_LINKS.bookFreeCallWhatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-emerald-800 dark:text-emerald-400 hover:underline"
+                >
+                  {t.nav.bookCta} (WhatsApp)
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -168,9 +183,16 @@ export function Footer({ lang, onNavigate }: FooterProps) {
         </div>
 
         <div className="pt-4 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-stone-500 dark:text-stone-400">
-          <p>
-            © {new Date().getFullYear()} Vedika Health and Wellness · {t.footer.rights}
-          </p>
+          <div className="flex items-center gap-2.5">
+            <img
+              src={SITE_IMAGES.logoBadge}
+              alt="Vedika Health & Wellness Seal"
+              className="w-7 h-7 rounded-full object-contain shrink-0"
+            />
+            <p>
+              © {new Date().getFullYear()} Vedika Health and Wellness · {t.footer.rights}
+            </p>
+          </div>
           <a
             href={SITE_LINKS.website}
             target="_blank"

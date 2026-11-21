@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ChevronDown, Search, ArrowRight } from 'lucide-react';
+import { ChevronDown, MessageCircle, Search } from 'lucide-react';
 import type { Lang, PageId } from '../types';
 import { getCopy } from '../data/translations';
+import { SITE_LINKS } from '../data/siteAssets';
 
 interface FaqPageProps {
   lang: Lang;
@@ -102,14 +103,24 @@ export function FaqPage({ lang, onNavigate }: FaqPageProps) {
               : 'निखिल कांबोज या महंत अनुपमानंद गिरी से सीधे और मुफ्त बात करें।'}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => onNavigate('book')}
-          className="cta-calm-shift inline-flex items-center gap-2 text-white font-semibold text-sm px-6 py-3 rounded-lg cursor-pointer whitespace-nowrap shrink-0"
-        >
-          <span>{lang === 'en' ? 'Book Free Call' : 'फ्री कॉल बुक करें'}</span>
-          <ArrowRight className="w-4 h-4" aria-hidden="true" />
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <a
+            href={SITE_LINKS.bookFreeCallWhatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cta-calm-shift inline-flex items-center gap-2 text-white font-semibold text-sm px-5 py-3 rounded-lg cursor-pointer whitespace-nowrap"
+          >
+            <MessageCircle className="w-4 h-4" aria-hidden="true" />
+            <span>{lang === 'en' ? 'Book Free Call' : 'फ्री कॉल बुक करें'}</span>
+          </a>
+          <button
+            type="button"
+            onClick={() => onNavigate('book')}
+            className="px-4 py-3 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-[#1A231F] text-stone-800 dark:text-stone-100 text-xs sm:text-sm font-semibold hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors cursor-pointer whitespace-nowrap"
+          >
+            {lang === 'en' ? 'Or Request Callback' : 'या कॉलबैक फॉर्म भरें'}
+          </button>
+        </div>
       </div>
     </div>
   );
